@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luna AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #09090f;
+      color: #f1f5f9;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .screen { position: fixed; inset: 0; display: flex; z-index: 100; }
+    .screen.hidden { display: none; }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: #09090f;
+    }
+    .login-box {
+      text-align: center;
+      gap: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 320px;
+    }
+    .logo { font-size: 60px; }
+    .title {
+      font-size: 32px;
+      font-weight: bold;
+      background: linear-gradient(90deg, #a78bfa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { color: #64748b; font-size: 14px; }
+
+    .login-input {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      width: 100%;
+      text-align: center;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .login-input:focus { border-color: #a78bfa; }
+    .login-input::placeholder { color: #374151; }
+
+    .login-btn {
+      background: linear-gradient(135deg, #a78bfa, #c084fc);
+      border: none;
+      color: white;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+      transition: opacity .2s;
+    }
+    .login-btn:hover { opacity: 0.88; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      color: #374151;
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .social-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: white;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: background .2s;
+    }
+    .social-btn:hover { background: rgba(255,255,255,0.1); }
+    .social-icon { font-size: 18px; }
+
+    /* ── APP ── */
+    #appScreen { flex-direction: column; background: #09090f; }
+
+    header {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header-left {
+      font-weight: bold;
+      background: linear-gradient(90deg, #a78bfa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 16px;
+    }
+    .header-right { display: flex; gap: 8px; align-items: center; }
+
+    .badge {
+      background: rgba(167,139,250,0.15);
+      border: 1px solid rgba(167,139,250,0.35);
+      color: #d8b4fe;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge.premium {
+      background: rgba(34,197,94,0.15);
+      border-color: rgba(34,197,94,0.35);
+      color: #86efac;
+    }
+
+    .btn-small {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    .btn-small:hover { background: rgba(255,255,255,0.14); }
+    .btn-upgrade {
+      background: linear-gradient(135deg, #a78bfa, #c084fc);
+      border: none;
+      color: white;
+    }
+
+    /* modes */
+    .modes {
+      display: flex;
+      gap: 6px;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .modes::-webkit-scrollbar { display: none; }
+    .mode-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 12px;
+      transition: all .2s;
+    }
+    .mode-btn.active {
+      background: rgba(167,139,250,0.18);
+      color: #a78bfa;
+      border-color: #a78bfa;
+    }
+    .mode-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* messages */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #messages::-webkit-scrollbar { width: 3px; }
+    #messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+    .empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+      margin-top: 80px;
+      opacity: 0.7;
+    }
+    .empty-icon { font-size: 44px; }
+    .empty-title { font-size: 18px; font-weight: 600; }
+    .empty-text { color: #64748b; font-size: 13px; }
+
+    .msg { display: flex; gap: 8px; animation: fadeIn 0.25s ease; }
+    .msg.user { flex-direction: row-reverse; }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #c084fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: white;
+    }
+    .avatar.ai { background: rgba(255,255,255,0.08); font-size: 16px; }
+
+    .bubble {
+      max-width: 75%;
+      padding: 10px 13px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    .bubble.ai {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-bottom-left-radius: 4px;
+    }
+    .bubble.user {
+      background: linear-gradient(135deg, #a78bfa, #c084fc);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* code blocks inside bubble */
+    .bubble code {
+      background: rgba(0,0,0,0.35);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    .bubble pre {
+      background: rgba(0,0,0,0.4);
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* input area */
+    .input-area {
+      padding: 10px 14px 14px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+    textarea {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: none;
+      max-height: 100px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: rgba(167,139,250,0.5); }
+    textarea::placeholder { color: #374151; }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #a78bfa, #c084fc);
+      border: none;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity .2s;
+    }
+    .send-btn:hover { opacity: 0.88; }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* modals */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+    }
+    .modal.show { display: flex; }
+
+    .modal-box {
+      background: #14142a;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      gap: 14px;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; }
+    .modal-text { color: #94a3b8; font-size: 13px; line-height: 1.6; }
+    .timer {
+      font-size: 38px;
+      font-weight: bold;
+      background: linear-gradient(90deg, #a78bfa, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .features {
+      text-align: left;
+      background: rgba(167,139,250,0.08);
+      border: 1px solid rgba(167,139,250,0.2);
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      gap: 8px;
+      display: flex;
+      flex-direction: column;
+      color: #d8b4fe;
+    }
+    .modal-buttons { display: flex; gap: 10px; }
+    .modal-btn {
+      flex: 1;
+      padding: 11px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: opacity .2s;
+    }
+    .modal-btn:hover { opacity: 0.88; }
+    .btn-primary { background: linear-gradient(135deg, #a78bfa, #c084fc); color: white; }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: white;
+    }
+
+    /* settings profile */
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 13px;
+    }
+    .profile-row:last-of-type { border-bottom: none; }
+    .profile-label { color: #64748b; }
+    .profile-value { font-weight: 600; }
+
+    /* typing dots */
+    .typing span {
+      display: inline-block;
+      width: 6px; height: 6px;
+      background: #a78bfa;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: bounce 1s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: .15s; }
+    .typing span:nth-child(3) { animation-delay: .3s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-5px); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen" class="screen">
+  <div class="login-box">
+    <div class="logo">🌙</div>
+    <div class="title">Luna AI</div>
+    <div class="subtitle">Your intelligent AI assistant</div>
+
+    <input type="text" id="nameInput" class="login-input" placeholder="Enter your name..." maxlength="30" autocomplete="off">
+    <button class="login-btn" onclick="login()">Start Chatting →</button>
+
+    <div class="divider">or continue with</div>
+
+    <button class="social-btn" onclick="loginWithGoogle()">
+      <span class="social-icon">
+        <svg width="18" height="18" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+      </span>
+      Continue with Google
+    </button>
+
+    <button class="social-btn" onclick="loginWithApple()">
+      <span class="social-icon">
+        <svg width="18" height="18" viewBox="0 0 814 1000" fill="white">
+          <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105.5-57.8-155.5-127.4C46.7 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.1 0 128.4 46.4 172.5 46.4 42.8 0 109.6-49 190.5-49 30.4 0 133 2.6 198.3 99zM549.8 163.3c24.3-29 41.2-69.7 41.2-110.4 0-5.8-.6-11.6-1.3-16.7-39.2 1.3-85.5 26-113.5 57.8-22.4 25.7-43.4 66.4-43.4 107.7 0 6.4.6 12.8 1.3 15.4 2.6.6 6.4 1.3 10.3 1.3 35.4 0 79.8-23.1 105.4-54.1z"/>
+        </svg>
+      </span>
+      Continue with Apple
+    </button>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen" class="screen hidden">
+  <header>
+    <div class="header-left">🌙 Luna</div>
+    <div class="header-right">
+      <div id="badge" class="badge">…</div>
+      <button class="btn-small btn-upgrade" id="upgradeBtn" onclick="showUpgradeModal()">⭐ Upgrade</button>
+      <button class="btn-small" onclick="showSettings()">⚙️</button>
+      <button class="btn-small" onclick="logout()">↩</button>
+    </div>
+  </header>
+
+  <div class="modes">
+    <button class="mode-btn active" id="chatBtn" onclick="setMode('chat',this)">💬 Chat</button>
+    <button class="mode-btn" id="codeBtn" onclick="setMode('code',this)">💻 Code</button>
+    <button class="mode-btn" id="imageBtn" onclick="setMode('image',this)">🎨 Image</button>
+    <button class="mode-btn" id="analyzeBtn" onclick="setMode('analyze',this)">📊 Analyze</button>
+    <button class="mode-btn" id="searchBtn" onclick="setMode('search',this)">🔍 Search</button>
+  </div>
+
+  <div id="messages">
+    <div class="empty">
+      <div class="empty-icon">🌙</div>
+      <div class="empty-title">How can I help?</div>
+      <div class="empty-text">10 messages per hour • Upgrade for unlimited</div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <textarea id="input" placeholder="Ask something…" rows="1"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="send()">↑</button>
+  </div>
+</div>
+
+<!-- LIMIT MODAL -->
+<div id="limitModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">⏰ Limit Reached</div>
+    <div class="modal-text">You've used your 10 messages for this hour. Resets in:</div>
+    <div class="timer" id="timer">59:59</div>
+    <div class="modal-buttons">
+      <button class="modal-btn btn-secondary" onclick="closeLimitModal()">Close</button>
+      <button class="modal-btn btn-primary" onclick="showUpgradeModal()">⭐ Upgrade</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPGRADE MODAL -->
+<div id="upgradeModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">⭐ Go Premium</div>
+    <div class="modal-text">Unlock everything Luna has to offer</div>
+    <div class="features">
+      <div>✅ Unlimited messages</div>
+      <div>✅ All 5 modes (Code, Image, Analyze, Search)</div>
+      <div>✅ Priority AI responses</div>
+      <div>✅ Full chat history</div>
+    </div>
+    <div style="font-size:22px;font-weight:700;background:linear-gradient(90deg,#a78bfa,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">$9.99 / month</div>
+    <div class="modal-buttons">
+      <button class="modal-btn btn-secondary" onclick="closeUpgradeModal()">Cancel</button>
+      <button class="modal-btn btn-primary" onclick="upgrade()">Upgrade Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal">
+  <div class="modal-box">
+    <div class="modal-title">⚙️ Settings</div>
+    <div style="text-align:left;">
+      <div class="profile-row"><span class="profile-label">Name</span><span class="profile-value" id="profileName">–</span></div>
+      <div class="profile-row"><span class="profile-label">Plan</span><span class="profile-value" id="profilePlan">Free</span></div>
+      <div class="profile-row"><span class="profile-label">Messages used</span><span class="profile-value" id="profileMessages">0/10</span></div>
+    </div>
+    <div class="modal-buttons" style="flex-direction:column;">
+      <button class="modal-btn btn-secondary" onclick="clearHistory()">🗑 Clear Chat History</button>
+      <button class="modal-btn btn-secondary" onclick="closeSettingsModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── state ──────────────────────────────────────────────
+  let user = { name:'', isPremium:false, messagesThisHour:0, hourResetTime:0, avatar:'?' };
+  let currentMode = 'chat';
+  let chatHistory  = [];
+  let isSending    = false;
+  const GEMINI_KEY = "AIzaSyAb8RN6L4UfCziRVJW7CzS6Cy9n9nZ4u3hqC8tZ0rq8IOjIBtqQ";
+
+  // mode prompts
+  const MODE_PROMPTS = {
+    chat:    '',
+    code:    'You are an expert programmer. Provide clean, well-commented code with explanations. Use code blocks.',
+    image:   'Describe in vivid detail how to create or visualize the following image concept:',
+    analyze: 'Analyze the following thoroughly with structured insights, pros/cons, and conclusions:',
+    search:  'Act as a knowledgeable assistant. Provide comprehensive, fact-based information about:'
+  };
+
+  // ── init ───────────────────────────────────────────────
+  function init() {
+    try {
+      const savedUser    = localStorage.getItem('luna_user');
+      const savedHistory = localStorage.getItem('luna_history');
+      if (savedUser) {
+        user = JSON.parse(savedUser);
+        chatHistory = savedHistory ? JSON.parse(savedHistory) : [];
+        checkHourReset();
+        showApp();
+        loadChatHistory();
+      } else {
+        showLogin();
+        document.getElementById('nameInput').focus();
+      }
+    } catch(e) {
+      localStorage.clear();
+      showLogin();
+    }
+    startTimer();
+  }
+
+  // ── login ──────────────────────────────────────────────
+  function login() {
+    const name = document.getElementById('nameInput').value.trim();
+    if (!name) { shakeInput(); return; }
+    createUser(name);
+  }
+
+  function loginWithGoogle() {
+    const name = prompt('Enter your Google account name (demo):');
+    if (!name || !name.trim()) return;
+    createUser(name.trim() + ' (Google)');
+  }
+
+  function loginWithApple() {
+    const name = prompt('Enter your Apple ID name (demo):');
+    if (!name || !name.trim()) return;
+    createUser(name.trim() + ' (Apple)');
+  }
+
+  function createUser(name) {
+    user = {
+      name,
+      isPremium: false,
+      messagesThisHour: 0,
+      hourResetTime: Date.now() + 3600000,
+      avatar: name[0].toUpperCase()
+    };
+    save();
+    showApp();
+  }
+
+  function shakeInput() {
+    const inp = document.getElementById('nameInput');
+    inp.style.borderColor = '#f87171';
+    inp.placeholder = 'Please enter your name!';
+    setTimeout(() => {
+      inp.style.borderColor = '';
+      inp.placeholder = 'Enter your name...';
+    }, 1500);
+  }
+
+  function logout() {
+    if (!confirm('Logout?')) return;
+    localStorage.removeItem('luna_user');
+    localStorage.removeItem('luna_history');
+    user = { name:'', isPremium:false, messagesThisHour:0, hourResetTime:0, avatar:'?' };
+    chatHistory = [];
+    showLogin();
+    document.getElementById('nameInput').value = '';
+  }
+
+  // ── hour reset ─────────────────────────────────────────
+  function checkHourReset() {
+    if (Date.now() > user.hourResetTime) {
+      user.messagesThisHour = 0;
+      user.hourResetTime    = Date.now() + 3600000;
+      save();
+    }
+  }
+
+  // ── screens ────────────────────────────────────────────
+  function showLogin() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('appScreen').classList.add('hidden');
+  }
+  function showApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    updateUI();
+  }
+
+  // ── UI update ──────────────────────────────────────────
+  function updateUI() {
+    const badge      = document.getElementById('badge');
+    const upgradeBtn = document.getElementById('upgradeBtn');
+    const premiumModes = ['codeBtn','imageBtn','analyzeBtn','searchBtn'];
+
+    if (user.isPremium) {
+      badge.className   = 'badge premium';
+      badge.textContent = '⭐ Premium';
+      upgradeBtn.style.display = 'none';
+      premiumModes.forEach(id => { document.getElementById(id).disabled = false; });
+    } else {
+      badge.className   = 'badge';
+      badge.textContent = `📊 ${user.messagesThisHour}/10`;
+      upgradeBtn.style.display = 'block';
+      premiumModes.forEach(id => { document.getElementById(id).disabled = true; });
+    }
+  }
+
+  // ── modes ──────────────────────────────────────────────
+  function setMode(m, btn) {
+    if (btn.disabled) { showUpgradeModal(); return; }
+    currentMode = m;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('input').placeholder =
+      m === 'code'    ? 'Describe the code you need…' :
+      m === 'image'   ? 'Describe the image concept…' :
+      m === 'analyze' ? 'Paste text or topic to analyze…' :
+      m === 'search'  ? 'What do you want to know about?' :
+      'Ask something…';
+  }
+
+  // ── messages ───────────────────────────────────────────
+  function addMsg(text, sender, isTyping = false) {
+    const div = document.getElementById('messages');
+    if (div.querySelector('.empty')) div.innerHTML = '';
+
+    const msg    = document.createElement('div');
+    msg.className = `msg ${sender}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `avatar ${sender === 'ai' ? 'ai' : ''}`;
+    avatar.textContent = sender === 'ai' ? '🌙' : user.avatar;
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${sender}`;
+
+    if (isTyping) {
+      bubble.className += ' typing';
+      bubble.innerHTML = '<span></span><span></span><span></span>';
+    } else {
+      bubble.innerHTML = formatText(text);
+    }
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    div.appendChild(msg);
+    div.scrollTop = div.scrollHeight;
+
+    if (!isTyping) {
+      chatHistory.push({ sender, text, time: new Date().toLocaleTimeString() });
+      saveChatHistory();
+    }
+
+    return bubble; // return so we can update it
+  }
+
+  // simple markdown-like formatter
+  function formatText(text) {
+    if (!text) return '';
+    // escape HTML
+    let s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // code blocks ```
+    s = s.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    // inline code
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // bold **
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // newlines
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+
+  // ── Gemini API ────────────────────────────────────────
+  async function callGemini(userText) {
+    const prefix = MODE_PROMPTS[currentMode];
+    const prompt = prefix ? `${prefix}\n\n${userText}` : userText;
+
+    // build context (last 6 messages for memory)
+    const contextMsgs = chatHistory.slice(-6).map(m => ({
+      role: m.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: m.text }]
+    }));
+    contextMsgs.push({ role: 'user', parts: [{ text: prompt }] });
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: contextMsgs,
+            generationConfig: { maxOutputTokens: 1200, temperature: 0.8 }
+          })
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data  = await res.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!reply) throw new Error('Empty response');
+      return reply;
+
+    } catch (e) {
+      if (e.message.includes('API key')) return '🔑 Invalid API key. Please check configuration.';
+      return `⚠️ ${e.message || 'Something went wrong. Please try again.'}`;
+    }
+  }
+
+  // ── send ──────────────────────────────────────────────
+  async function send() {
+    if (isSending) return;
+    const inp  = document.getElementById('input');
+    const text = inp.value.trim();
+    if (!text) return;
+
+    checkHourReset();
+
+    if (!user.isPremium && user.messagesThisHour >= 10) {
+      showLimitModal();
+      return;
+    }
+
+    isSending = true;
+    document.getElementById('sendBtn').disabled = true;
+
+    addMsg(text, 'user');
+    inp.value = '';
+    inp.style.height = 'auto';
+
+    if (!user.isPremium) {
+      user.messagesThisHour++;
+      save();
+      updateUI();
+    }
+
+    const typingBubble = addMsg('', 'ai', true);
+    const reply = await callGemini(text);
+
+    // replace typing with real reply
+    typingBubble.className = 'bubble ai';
+    typingBubble.innerHTML = formatText(reply);
+    document.getElementById('messages').scrollTop = 9999;
+
+    chatHistory.push({ sender:'ai', text: reply, time: new Date().toLocaleTimeString() });
+    saveChatHistory();
+
+    isSending = false;
+    document.getElementById('sendBtn').disabled = false;
+    inp.focus();
+  }
+
+  // ── modals ────────────────────────────────────────────
+  function showLimitModal()    { document.getElementById('limitModal').classList.add('show'); }
+  function closeLimitModal()   { document.getElementById('limitModal').classList.remove('show'); }
+  function showUpgradeModal()  { closeLimitModal(); document.getElementById('upgradeModal').classList.add('show'); }
+  function closeUpgradeModal() { document.getElementById('upgradeModal').classList.remove('show'); }
+  function closeSettingsModal(){ document.getElementById('settingsModal').classList.remove('show'); }
+
+  function upgrade() {
+    user.isPremium = true;
+    save();
+    updateUI();
+    closeUpgradeModal();
+    addMsg('🎉 You\'re now Premium! All modes unlocked and unlimited messages enabled.', 'ai');
+  }
+
+  function showSettings() {
+    document.getElementById('profileName').textContent     = user.name;
+    document.getElementById('profilePlan').textContent     = user.isPremium ? '⭐ Premium' : 'Free';
+    document.getElementById('profileMessages').textContent = `${user.messagesThisHour}/10`;
+    document.getElementById('settingsModal').classList.add('show');
+  }
+
+  function clearHistory() {
+    if (!confirm('Clear all chat history?')) return;
+    chatHistory = [];
+    localStorage.removeItem('luna_history');
+    document.getElementById('messages').innerHTML =
+      '<div class="empty"><div class="empty-icon">🌙</div><div class="empty-title">Chat cleared</div><div class="empty-text">Start a new conversation!</div></div>';
+    closeSettingsModal();
+  }
+
+  // ── load history ──────────────────────────────────────
+  function loadChatHistory() {
+    const div = document.getElementById('messages');
+    div.innerHTML = '';
+    chatHistory.forEach(m => {
+      const msg = document.createElement('div');
+      msg.className = `msg ${m.sender}`;
+      const av = document.createElement('div');
+      av.className = `avatar ${m.sender === 'ai' ? 'ai' : ''}`;
+      av.textContent = m.sender === 'ai' ? '🌙' : user.avatar;
+      const bub = document.createElement('div');
+      bub.className = `bubble ${m.sender}`;
+      bub.innerHTML = formatText(m.text);
+      msg.appendChild(av);
+      msg.appendChild(bub);
+      div.appendChild(msg);
+    });
+    if (!chatHistory.length) {
+      div.innerHTML = '<div class="empty"><div class="empty-icon">🌙</div><div class="empty-title">How can I help?</div><div class="empty-text">10 messages per hour • Upgrade for unlimited</div></div>';
+    } else {
+      div.scrollTop = div.scrollHeight;
+    }
+  }
+
+  // ── timer ─────────────────────────────────────────────
+  function startTimer() {
+    setInterval(() => {
+      const diff = user.hourResetTime - Date.now();
+      if (diff <= 0) {
+        user.messagesThisHour = 0;
+        user.hourResetTime    = Date.now() + 3600000;
+        save();
+        updateUI();
+      }
+      const m = Math.max(0, Math.floor(diff / 60000));
+      const s = Math.max(0, Math.floor((diff % 60000) / 1000));
+      const el = document.getElementById('timer');
+      if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+  }
+
+  // ── storage ───────────────────────────────────────────
+  function save()            { try { localStorage.setItem('luna_user', JSON.stringify(user)); } catch(e){} }
+  function saveChatHistory() { try { localStorage.setItem('luna_history', JSON.stringify(chatHistory.slice(-50))); } catch(e){} }
+
+  // ── event listeners ───────────────────────────────────
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  document.getElementById('input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  document.getElementById('input').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  });
+
+  // close modals on backdrop click
+  ['limitModal','upgradeModal','settingsModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('show');
+    });
+  });
+
+  init();
+</script>
+</body>
+</html>
